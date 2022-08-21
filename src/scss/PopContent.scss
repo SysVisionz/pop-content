@@ -1,0 +1,19 @@
+@import './base-vars.scss';
+
+.svz-pc-title-container{
+	cursor: pointer;
+	display: flex;
+	line-height: 1;
+	padding: 5px;
+}
+.svz-pc-details-container{
+	position: relative;
+	overflow: hidden;
+	transition: height 400ms ease;
+	&.horizontal{
+		transition: width 400ms ease;
+	}
+	.svz-pc-details{
+		position: absolute;
+	}
+}
