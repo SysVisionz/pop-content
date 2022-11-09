@@ -1,26 +1,26 @@
 {
-  "name": "pop-content",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "react": "^17.0.0",
-    "react-dom": "^17.0.0",
-    "react-scripts": "5.0.0"
-  },
-  "dev-dependencies": {
-    "@types/jest": "^27.4.1",
-    "@types/node": "^16.11.26",
-    "@types/react": "^18.0.25",
-    "@types/react-dom": "^17.0.11",
-    "node-sass": "^7.0.3",
-    "typescript": "^4.5.5",
-    "web-vitals": "^2.1.4"
+  "name": "svz-accordion",
+  "version": "1.0.0",
+  "description": "The SysVisionz Accordion is a one stop shop for both a typical accordion type component and for a special table row pair type accordion.",
+  "author": "Colin Brennan (sysvisionz)",
+  "keywords": [
+    "accordion",
+    "react",
+    "reactjs",
+    "component",
+    "table"
+  ],
+  "prepare": "npm run build",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "peerDependencies": {
+    "react": ">=17.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs"
   },
   "eslintConfig": {
     "extends": [
@@ -28,6 +28,12 @@
       "react-app/jest"
     ]
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "license": "MIT",
   "browserslist": {
     "production": [
       ">0.2%",
@@ -39,8 +45,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@types/react-dom": "^18.0.8"
   }
 }

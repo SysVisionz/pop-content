@@ -1,21 +1,21 @@
-import { MouseEvent, useEffect, useRef, useState, FC, LegacyRef, ReactElement} from 'react'
-import './scss/PopContent.scss';
+import React, { MouseEvent, useEffect, useRef, useState, FC, LegacyRef, ReactElement} from 'react'
+import './scss/Accordion.scss';
 
 /**
- * PopContent is a component that does a single task, and does it well; provides a content reveal on click of the primary element (or whenever you choose, really)
- * @param type: PopContent can either be used as a div element or as a pair of table rows, for your table needs.
+ * Accordion is a component that does a single task, and does it well; provides a content reveal on click of the primary element (or whenever you choose, really)
+ * Accordion can either be used as a div element or as a pair of table rows, for your table needs.
  */
 
-const PopContent: FC<{
+const Accordion: FC<{
 	summary?: ReactElement, 
 	open?: boolean,
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
 	onToggle?: (open: boolean) => void;
-	// closeOnMouseOut?: boolean;
+	closeOnMouseOut?: boolean;
 	noCloseOnOutsideClick?: boolean;
 	children: ReactElement
 	openDirection?: 'down' | 'up' | 'left' | 'right';
-}>= ({summary, onClick, open: propOpen = false, onToggle, /* closeOnMouseOut, */ noCloseOnOutsideClick, openDirection = 'down', children}) => {
+}> = ({summary, onClick, open: propOpen = false, onToggle, closeOnMouseOut, noCloseOnOutsideClick, openDirection = 'down', children}) => {
 	const [open, setOpen] = useState(propOpen)
 	const [dimensions, setDimensions ] = useState<{x: number, y: number}>({x: 0, y: 0})
 	const details = useRef<HTMLDivElement | HTMLTableRowElement>(null)
@@ -25,13 +25,13 @@ const PopContent: FC<{
   	
 
 	const doDimensions = () => {
-		const maxHeight: number = children.type === 'tr'
+		const maxHeight: number = children.type === 'tr' || summary?.type === 'tr'
 			? details.current ? 1 : 0
 			: details.current?.scrollHeight || 0;
 		const maxWidth: number = details.current?.scrollWidth || 0;
 		setDimensions({
-			x: ['left', 'right'].includes(openDirection) && open && maxWidth || 0, 
-			y: ['up', 'down'].includes(openDirection) && open && maxHeight || 0
+			x: ['left', 'right'].includes(openDirection) && open ? maxWidth : 0, 
+			y: (children.type === 'tr' || summary?.type === 'tr' || !['left', 'right'].includes(openDirection)) && open ? maxHeight : 0
 		})
 	}
 
@@ -69,9 +69,6 @@ const PopContent: FC<{
 		inside.current.details = false;
 		timer.current = setTimeout(closeIfOut, 100)
 	}
-	const enteredDetails = () => {
-		inside.current.details = true;
-	}
 
 	const checkToCloseOnClick = (evt: globalThis.MouseEvent) => {
 		evt.stopPropagation();
@@ -83,18 +80,18 @@ const PopContent: FC<{
 	useEffect(() => {
 		if (open){
 			noCloseOnOutsideClick && document.addEventListener('click', checkToCloseOnClick)
-			// if (closeOnMouseOut){
-			// 	inside.current.activate && activate.current?.addEventListener('mouseleave', leftActivate)
+			if (closeOnMouseOut){
+				inside.current.activate && activate.current?.addEventListener('mouseleave', leftActivate)
 
-			// }
+			}
 		}
 		return () => {
 			if (open){
 				noCloseOnOutsideClick && document.removeEventListener('click', checkToCloseOnClick)
-				// if (closeOnMouseOut){
-				// 	activate.current?.removeEventListener('mouseleave', leftActivate);
-				// 	details.current?.removeEventListener('mouseleave', leftDetails);
-				// }
+				if (closeOnMouseOut){
+					activate.current?.removeEventListener('mouseleave', leftActivate);
+					details.current?.removeEventListener('mouseleave', leftDetails);
+				}
 			}
 		}
 	})
@@ -118,14 +115,16 @@ const PopContent: FC<{
 			</tr>
 			: <div
 				{...props}
-				ref={details as LegacyRef<HTMLTableRowElement>}
 				style={{height: dimensions.y, width: dimensions.x}}
 			>
-				<div className='svz-pc-details'>{t.props.children || t}</div>
+				<div {...(t.type === 'div' ? {...t.props,
+					ref: details as LegacyRef<HTMLTableRowElement>, 
+					className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`
+				} : {className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`})} >{t.type === 'div' ? t.props.children : t}</div>
 			</div>
 	}
 	
-	const summ: (included?: JSX.Element) => JSX.Element | null = (included) => {
+	const summ: () => JSX.Element | null = () => {
 		if (!summary){
 			return null
 		}
@@ -142,9 +141,9 @@ const PopContent: FC<{
 			{summary.props?.children}
 		</tr>
 		: <div
-			ref={activate as LegacyRef<HTMLDivElement>}
+			{...(summary.props.type === 'div' ? {...summary.props, ref: activate as LegacyRef<HTMLDivElement>} : {ref: activate as LegacyRef<HTMLDivElement>})}
 		>
-			{summary.props?.children || summary}
+			{summary.props.type === 'div' ? summary.props?.children : summary}
 		</div>
 
 		return value;
@@ -162,7 +161,7 @@ const PopContent: FC<{
 		: <>{summ()}{child()}</>
 }
 
-export const PopRow: FC<{
+const AccordionRow: FC<{
 	details?: ReactElement, 
 	open?: boolean,
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
@@ -189,14 +188,12 @@ export const PopRow: FC<{
 	const made = make(children)
 	if (made instanceof Array){
 		const [summary, children] = made
-		return <PopContent summary={summary} {...props}>{children}</PopContent>
+		return <Accordion summary={summary} {...props}>{children}</Accordion>
 	}
 	if (details) {
-		return <PopContent summary={make(children) as ReactElement} {...props}>{make(details) as ReactElement}</PopContent>
+		return <Accordion summary={make(children) as ReactElement} {...props}>{make(details) as ReactElement}</Accordion>
 	}
 	return made
 }
 
-export const Accordion = PopContent
-
-export default PopContent
+export {Accordion as default, AccordionRow}
