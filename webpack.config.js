@@ -1,11 +1,9 @@
 const path=require('path');
+const constants=require('constants')
 module.exports = {
     entry: "./src/index.tsx",
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.scss'],
-      alias: {
-        react: path.resolve('./node_modules/react')
-      }
     },
     mode: "production",
     output: {

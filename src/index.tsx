@@ -22,6 +22,7 @@ const Accordion: FC<{
 	const activate = useRef<HTMLDivElement | HTMLTableRowElement>(null)
 	const inside = useRef({activate: false, details: false});
 	const timer = useRef<NodeJS.Timeout>()
+	const prevElems = useRef<ResizeObserverEntry[]>()
   	
 	const isTR = (typeof children === 'object' && children.type === 'tr') || typeof summary === 'object' && summary?.type === 'tr'
 
@@ -31,8 +32,8 @@ const Accordion: FC<{
 			: details.current?.scrollHeight || 0;
 		const maxWidth: number = details.current?.scrollWidth || 0;
 		setDimensions({
-			x: ['left', 'right'].includes(openDirection) && open ? maxWidth : 0, 
-			y: (isTR || !['left', 'right'].includes(openDirection)) && open ? maxHeight : 0
+			x: isTR || ['up', 'down'].includes(openDirection) || open ? maxWidth : 0, 
+			y: ['left', 'right'].includes(openDirection) || open ? maxHeight : 0
 		})
 	}
 
@@ -45,8 +46,22 @@ const Accordion: FC<{
 		doDimensions()
 	}, [open, onToggle])
 
-	useResize( details.current, () => {
-		doDimensions()
+	useResize( details.current, (elems) => {
+		let changed = false;
+		const withinRange=(num1: number, num2: number, range: number) => Math.abs(num1 - num2) <= range;
+		if (prevElems.current){
+			for (const i in prevElems.current){
+				const {contentRect} = prevElems.current[i]
+				const {contentRect: newContentRect} = elems?.[i] || {}
+				if (!withinRange(contentRect.height, newContentRect?.height || contentRect.height, 5) || !withinRange(contentRect.width, newContentRect?.width || contentRect.width, 5) ){
+					changed = true;
+				}
+			}
+		}
+		prevElems.current = elems;
+		if (changed) {
+			doDimensions()
+		}
 	})
 
 	const handleClick = (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement> ) => {
@@ -139,7 +154,6 @@ const Accordion: FC<{
 		}
 		const props = {
 			className: 'svz-pc-summary',
-			style: {height: dimensions.y, ...(dimensions.x === null ? {} : {width: dimensions.x})},
 			onClick: handleClick
 		}
 		const value = typeof summary === 'object' 
@@ -214,23 +228,25 @@ const AccordionRow: FC<{
 	return made
 }
 
-const useResize = (element: Element | null , onResize: (entries?: ResizeObserverEntry[], observer?: ResizeObserver) => void, options?: ResizeObserverOptions & {delay?: number | null}) => {
+const useResize = (element: Element | null | undefined , onResize: (entries?: ResizeObserverEntry[], observer?: ResizeObserver) => void, options?: ResizeObserverOptions & {delay?: number | null}) => {
 	const resizeChecker = useRef<ResizeObserver | null>(null)
 	const delay = useRef<NodeJS.Timeout | null>()
 	const {delay: delayFor, ...resizeOptions} = options || {};
 	useEffect(() => {
 		let elem: unknown = element
-		if (!resizeChecker.current){
-			resizeChecker.current = new ResizeObserver((entries, observer) => {
-				if (!delay || !delayFor){
-					onResize(entries, observer)
-					delay.current = setTimeout(() => {
-						delay.current = null;
-					}, delayFor || 50)
-				}
-			})
+		if (elem){
+			if (!resizeChecker.current){
+				resizeChecker.current = new ResizeObserver((entries, observer) => {
+					if (!delay || !delayFor){
+						onResize(entries, observer)
+						delay.current = setTimeout(() => {
+							delay.current = null;
+						}, delayFor || 50)
+					}
+				})
+			}
+			resizeChecker.current.observe(elem as Element, resizeOptions)
 		}
-		resizeChecker.current.observe(elem as Element, resizeOptions)
 		return () => {
 			resizeChecker.current?.unobserve(elem as Element)
 		}
