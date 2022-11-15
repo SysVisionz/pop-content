@@ -7,15 +7,15 @@ import './scss/Accordion.scss';
  */
 
 const Accordion: FC<{
-	summary?: ReactElement, 
+	summary?: ReactElement | string | number, 
 	open?: boolean,
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
 	onToggle?: (open: boolean) => void;
 	closeOnMouseOut?: boolean;
 	noCloseOnOutsideClick?: boolean;
-	children: ReactElement
+	children: ReactElement | string | number
 	openDirection?: 'down' | 'up' | 'left' | 'right';
-}> = ({summary, onClick, open: propOpen = false, onToggle, closeOnMouseOut, noCloseOnOutsideClick, openDirection = 'down', children}) => {
+}> = function({summary, onClick, open: propOpen = false, onToggle, closeOnMouseOut, noCloseOnOutsideClick, openDirection = 'down', children}) {
 	const [open, setOpen] = useState(propOpen)
 	const [dimensions, setDimensions ] = useState<{x: number, y: number}>({x: 0, y: 0})
 	const details = useRef<HTMLDivElement | HTMLTableRowElement>(null)
@@ -23,15 +23,16 @@ const Accordion: FC<{
 	const inside = useRef({activate: false, details: false});
 	const timer = useRef<NodeJS.Timeout>()
   	
+	const isTR = (typeof children === 'object' && children.type === 'tr') || typeof summary === 'object' && summary?.type === 'tr'
 
 	const doDimensions = () => {
-		const maxHeight: number = children.type === 'tr' || summary?.type === 'tr'
+		const maxHeight: number = isTR
 			? details.current ? 1 : 0
 			: details.current?.scrollHeight || 0;
 		const maxWidth: number = details.current?.scrollWidth || 0;
 		setDimensions({
 			x: ['left', 'right'].includes(openDirection) && open ? maxWidth : 0, 
-			y: (children.type === 'tr' || summary?.type === 'tr' || !['left', 'right'].includes(openDirection)) && open ? maxHeight : 0
+			y: (isTR || !['left', 'right'].includes(openDirection)) && open ? maxHeight : 0
 		})
 	}
 
@@ -43,6 +44,10 @@ const Accordion: FC<{
     	onToggle?.(open)
 		doDimensions()
 	}, [open, onToggle])
+
+	useResize( details.current, () => {
+		doDimensions()
+	})
 
 	const handleClick = (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement> ) => {
 		setOpen(!open);
@@ -105,22 +110,26 @@ const Accordion: FC<{
 			className: `svz-pc-details-container${open ? " open" : ''}`,
 		}
 		const t = force || children
-		return t?.type === 'tr'
-			? <tr
-				{...props}
-				ref={details as LegacyRef<HTMLTableRowElement>}
-				style={{lineHeight: dimensions.y}}
-			>
-				{t.props.children?.type === 'td' || t.props.children?.some?.((child: ReactElement) => child?.type === 'td') ? t.props.children : <td>{t.props.children}</td>}
-			</tr>
-			: <div
-				{...props}
-				style={{height: dimensions.y, width: dimensions.x}}
-			>
-				<div {...(t.type === 'div' ? {...t.props,
-					ref: details as LegacyRef<HTMLTableRowElement>, 
-					className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`
-				} : {className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`})} >{t.type === 'div' ? t.props.children : t}</div>
+		return typeof t === 'object' ? 
+			t?.type === 'tr'
+				? <tr
+					{...props}
+					ref={details as LegacyRef<HTMLTableRowElement>}
+					style={{lineHeight: dimensions.y}}
+				>
+					{t.props.children?.type === 'td' || t.props.children?.some?.((child: ReactElement) => child?.type === 'td') ? t.props.children : <td>{t.props.children}</td>}
+				</tr>
+				: <div
+					{...props}
+					style={{height: dimensions.y, width: dimensions.x}}
+				>
+					<div {...(t.type === 'div' ? {...t.props,
+						ref: details as LegacyRef<HTMLDivElement>, 
+						className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`
+					} : {className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`})} >{t.type === 'div' ? t.props.children : t}</div>
+				</div>
+			: <div {...props} style={{height: dimensions.y, width: dimensions.x}}>
+				<div ref={details as LegacyRef<HTMLDivElement>} className="svz-pc-details">{t}</div>
 			</div>
 	}
 	
@@ -133,20 +142,28 @@ const Accordion: FC<{
 			style: {height: dimensions.y, ...(dimensions.x === null ? {} : {width: dimensions.x})},
 			onClick: handleClick
 		}
-		const value = summary?.type === 'tr'
-		? <tr
-			{...props}
-			ref={activate as LegacyRef<HTMLTableRowElement>}
-		>
-			{summary.props?.children}
-		</tr>
-		: <div
-			{...(summary.props.type === 'div' ? {...summary.props, ref: activate as LegacyRef<HTMLDivElement>} : {ref: activate as LegacyRef<HTMLDivElement>})}
-		>
-			{summary.props.type === 'div' ? summary.props?.children : summary}
-		</div>
+		const value = typeof summary === 'object' 
+			? summary?.type === 'tr'
+				? <tr
+					{...props}
+					ref={activate as LegacyRef<HTMLTableRowElement>}
+				>
+					{summary.props?.children}
+				</tr>
+				: <div
+					{...(summary.props.type === 'div' ? {...summary.props, ...props, ref: activate as LegacyRef<HTMLDivElement>} : {...props, ref: activate as LegacyRef<HTMLDivElement>})}
+				>
+					{summary.props.type === 'div' ? summary.props?.children : summary}
+				</div>
+			: <div ref={activate}>{summary}</div>
 
 		return value;
+	}
+	if (typeof summary !== 'object'){
+		summary = <div>{summary}</div>
+	}
+	if (typeof children !== 'object'){
+		children = <div>{children}</div>
 	}
 	if ([summary?.type, children?.type].includes('tr') && summary?.type !== children?.type){
 		if (children?.type === 'tr'){
@@ -156,7 +173,8 @@ const Accordion: FC<{
 			children = <tr><td>{children}</td></tr>
 		}
 	}
-	return ['up', 'left'].includes(openDirection) 
+
+	return ['up', 'left'].includes(openDirection)
 		? <>{child()}{summ()}</>
 		: <>{summ()}{child()}</>
 }
@@ -194,6 +212,29 @@ const AccordionRow: FC<{
 		return <Accordion summary={make(children) as ReactElement} {...props}>{make(details) as ReactElement}</Accordion>
 	}
 	return made
+}
+
+const useResize = (element: Element | null , onResize: (entries?: ResizeObserverEntry[], observer?: ResizeObserver) => void, options?: ResizeObserverOptions & {delay?: number | null}) => {
+	const resizeChecker = useRef<ResizeObserver | null>(null)
+	const delay = useRef<NodeJS.Timeout | null>()
+	const {delay: delayFor, ...resizeOptions} = options || {};
+	useEffect(() => {
+		let elem: unknown = element
+		if (!resizeChecker.current){
+			resizeChecker.current = new ResizeObserver((entries, observer) => {
+				if (!delay || !delayFor){
+					onResize(entries, observer)
+					delay.current = setTimeout(() => {
+						delay.current = null;
+					}, delayFor || 50)
+				}
+			})
+		}
+		resizeChecker.current.observe(elem as Element, resizeOptions)
+		return () => {
+			resizeChecker.current?.unobserve(elem as Element)
+		}
+	})
 }
 
 export {Accordion as default, AccordionRow}
