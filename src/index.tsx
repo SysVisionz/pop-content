@@ -13,7 +13,7 @@ const Accordion: FC<{
 	onToggle?: (open: boolean) => void;
 	closeOnMouseOut?: boolean;
 	noCloseOnOutsideClick?: boolean;
-	children: ReactElement | string | number
+	children: ReactElement | string | number | ReactElement[]
 	openDirection?: 'down' | 'up' | 'left' | 'right';
 }> = function({summary, onClick, open: propOpen = false, onToggle, closeOnMouseOut, noCloseOnOutsideClick, openDirection = 'down', children}) {
 	const [open, setOpen] = useState(propOpen)
@@ -23,8 +23,11 @@ const Accordion: FC<{
 	const inside = useRef({activate: false, details: false});
 	const timer = useRef<NodeJS.Timeout>()
 	const prevElems = useRef<ResizeObserverEntry[]>()
-  	
-	const isTR = (typeof children === 'object' && children.type === 'tr') || typeof summary === 'object' && summary?.type === 'tr'
+	if (typeof children !== 'object' || children instanceof Array) {
+		children = <div>{children}</div>
+	}
+  	const isTR = (typeof children === 'object' && children.type === 'tr') || typeof summary === 'object' && summary?.type === 'tr'
+
 
 	const doDimensions = () => {
 		const maxHeight: number = isTR
@@ -120,11 +123,10 @@ const Accordion: FC<{
 		doDimensions()
 	}, [])
 
-	const child: (force?: JSX.Element) => JSX.Element = (force) => {
+	const child: (t: JSX.Element) => JSX.Element = (t) => {
 		const props = {
 			className: `svz-pc-details-container${open ? " open" : ''}`,
 		}
-		const t = force || children
 		return typeof t === 'object' ? 
 			t?.type === 'tr'
 				? <tr
@@ -176,9 +178,6 @@ const Accordion: FC<{
 	if (typeof summary !== 'object'){
 		summary = <div>{summary}</div>
 	}
-	if (typeof children !== 'object'){
-		children = <div>{children}</div>
-	}
 	if ([summary?.type, children?.type].includes('tr') && summary?.type !== children?.type){
 		if (children?.type === 'tr'){
 			summary = <tr><td>{summary}</td></tr>
@@ -189,21 +188,29 @@ const Accordion: FC<{
 	}
 
 	return ['up', 'left'].includes(openDirection)
-		? <>{child()}{summ()}</>
-		: <>{summ()}{child()}</>
+		? <>{child(children)}{summ()}</>
+		: <>{summ()}{child(children)}</>
 }
 
 const AccordionRow: FC<{
-	details?: ReactElement, 
+	details?: ReactElement | string | number, 
 	open?: boolean,
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
 	onToggle?: (open: boolean) => void;
 	closeOnMouseOut?: boolean;
 	noCloseOnOutsideClick?: boolean;
-	children: ReactElement | ReactElement[]
-	openDirection?: 'down' | 'up' | 'left' | 'right';
+	/** AccordionRow.children can use two formats.
+	 * <tr>{activating row content}</tr>
+	 * <tr>{details row content}</tr>
+	 * 
+	 * or simply as the content of the activating row.
+	 * 
+	 * <td>{cell content}</td><td>{cell content}</td> ...
+	 */
+	children: ReactElement | string | number | ReactElement[]
+	openDirection?: 'down' | 'up' ;
 }> = ({details, children, ...props}) => {
-	const make = (elem: ReactElement | ReactElement[]): ReactElement | [ReactElement, ReactElement] => {
+	const make = (elem: ReactElement | string | number | ReactElement[]): ReactElement | [ReactElement, ReactElement] => {
 		return typeof elem === 'string' || typeof elem === 'number'
 			? <tr><td>{elem}</td></tr>
 			: elem instanceof Array
