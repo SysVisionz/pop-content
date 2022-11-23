@@ -1,0 +1,24 @@
+
+.svz-pc-summary{
+	cursor: pointer;
+}
+.svz-pc-details-container{
+	position: relative;
+	overflow: hidden;
+	transition: height 400ms ease;
+}
+tr.svz-pc-details-container{
+	position: relative;
+	transition: line-height 400ms ease;
+	td{
+		overflow: hidden;
+	}
+	&:not(.open){
+		td{
+			padding: 0;
+		}
+	}
+}
+.svz-pc-details{
+	position: absolute;
+}
