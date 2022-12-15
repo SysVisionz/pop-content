@@ -39,6 +39,9 @@ Accordion is pretty simple, but very versatile.
 **openDirection?: 'down' | 'up' | 'left' | 'right'**  
 	This is the direction in which the children element will pop. If children is a tr element, only 'down' or 'up' are viable options.  
 
+**closeOnMouseOut?: boolean**  
+	When set to true, the accordion will close if the mouse moves outside of the details element after the first time it has entered the details element.
+
 **closeOnClick?: boolean**
 	When set to true, the accordion will close if the details section is clicked.
   

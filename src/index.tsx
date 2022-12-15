@@ -22,8 +22,7 @@ const Accordion: FC<{
 	const details = useRef<HTMLDivElement | HTMLTableRowElement>(null)
 	const activate = useRef<HTMLDivElement | HTMLTableRowElement>(null)
 	const noClose = useRef<boolean>(false)
-	const inside = useRef({activate: false, details: false});
-	const timer = useRef<NodeJS.Timeout>()
+	const inside = useRef<boolean>(false);
 	const prevElems = useRef<ResizeObserverEntry[]>()
 	if (typeof children !== 'object' || children instanceof Array) {
 		children = <div>{children}</div>
@@ -72,9 +71,6 @@ const Accordion: FC<{
 	const handleClick = (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement> ) => {
 		noClose.current = !open;
 		propOpen === undefined && setOpen(!open);
-		if (closeOnMouseOut){
-			inside.current.activate = true;
-		}
 		onClick?.(evt)
 	}
 
@@ -85,26 +81,6 @@ const Accordion: FC<{
 			? setOpen(false)
 			: ![details.current, activate.current].includes(elem) && checkUp(elem)
 		}
-	}
-
-	const closeIfOut = () => {
-		inside.current.details || inside.current.activate || setOpen(false)
-		timer.current && clearTimeout(timer.current)
-	}
-
-	const leftActivate = () => {
-		inside.current.activate = false;
-		activate.current?.removeEventListener('mouseleave', leftActivate)
-		timer.current = setTimeout(closeIfOut, 100)
-	}
-
-	const enterDetails = () => {
-		inside.current.details = true;
-	}
-
-	const leftDetails = () => {
-		inside.current.details = false;
-		timer.current = setTimeout(closeIfOut, 100)
 	}
 
 	const checkToCloseOnClick = (evt: globalThis.MouseEvent) => {
@@ -132,39 +108,26 @@ const Accordion: FC<{
 	}, [open])
 
 	useEffect(() => {
-		if (open){
-			if (closeOnMouseOut){
-				details.current?.addEventListener('mouseenter', enterDetails)
-				inside.current.details && details.current?.addEventListener('mouseleave', leftDetails)
-				inside.current.activate && activate.current?.addEventListener('mouseleave', leftActivate)
-			}
-		}
-		else if (inside.current.details || inside.current.activate){
-			inside.current = {activate: false, details: false}
-		}
-		return () => {
-				activate.current?.removeEventListener('mouseleave', leftActivate);
-				details.current?.removeEventListener('mouseenter', enterDetails)
-				details.current?.removeEventListener('mouseleave', leftDetails);
-		}
-	})
-
-	useEffect(() => {
 		doDimensions()
-		return () => {
-			document.removeEventListener('click', checkToCloseOnClick)
-			activate.current?.removeEventListener('mouseleave', leftActivate);
-			details.current?.removeEventListener('mouseleave', leftDetails);
-		}
 	}, [])
 
 	const child: (t: JSX.Element) => JSX.Element = (t) => {
 		const props = {
 			className: `svz-pc-details-container${open ? " open" : ''}`,
 			onClick: () => {
-				console.log('clicked the details')
 				if (!closeOnClick){
 					noClose.current = true;
+				}
+			},
+			onMouseEnter: () => {
+				if (closeOnMouseOut){
+					inside.current = true;
+				}
+			},
+			onMouseLeave: () => {
+				if (closeOnMouseOut && inside.current){
+					inside.current = false;
+					setOpen(false)
 				}
 			}
 		}
