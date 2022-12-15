@@ -12,14 +12,16 @@ const Accordion: FC<{
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
 	onToggle?: (open: boolean) => void;
 	closeOnMouseOut?: boolean;
-	noCloseOnOutsideClick?: boolean;
+	closeOnClick?: boolean;
+	keepOpen?: boolean;
 	children: ReactElement | string | number | ReactElement[]
 	openDirection?: 'down' | 'up' | 'left' | 'right';
-}> = function({summary, onClick, open: propOpen = false, onToggle, closeOnMouseOut, noCloseOnOutsideClick, openDirection = 'down', children}) {
-	const [open, setOpen] = useState(propOpen)
+}> = function({summary, onClick, open: propOpen, onToggle, closeOnMouseOut, keepOpen, openDirection = 'down', children, closeOnClick}) {
+	const [open, setOpen] = useState(!!propOpen)
 	const [dimensions, setDimensions ] = useState<{x: number, y: number}>({x: 0, y: 0})
 	const details = useRef<HTMLDivElement | HTMLTableRowElement>(null)
 	const activate = useRef<HTMLDivElement | HTMLTableRowElement>(null)
+	const noClose = useRef<boolean>(false)
 	const inside = useRef({activate: false, details: false});
 	const timer = useRef<NodeJS.Timeout>()
 	const prevElems = useRef<ResizeObserverEntry[]>()
@@ -41,7 +43,7 @@ const Accordion: FC<{
 	}
 
 	useEffect(() => {
-		setOpen(propOpen)
+		setOpen(!!propOpen)
 	}, [propOpen])
 
 	useEffect(() => {
@@ -68,14 +70,21 @@ const Accordion: FC<{
 	})
 
 	const handleClick = (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement> ) => {
-		setOpen(!open);
-		onClick?.(evt) 
+		noClose.current = !open;
+		propOpen === undefined && setOpen(!open);
+		if (closeOnMouseOut){
+			inside.current.activate = true;
+		}
+		onClick?.(evt)
 	}
 
 	const checkUp = (elem: any) => {
-		elem.parentNode === document.body 
+		console.log(elem)
+		if (!keepOpen){
+			elem === document.body
 			? setOpen(false)
-			: elem.parentNode !== details.current && checkUp(elem.parentNode);
+			: ![details.current, activate.current].includes(elem) && checkUp(elem)
+		}
 	}
 
 	const closeIfOut = () => {
@@ -88,44 +97,76 @@ const Accordion: FC<{
 		activate.current?.removeEventListener('mouseleave', leftActivate)
 		timer.current = setTimeout(closeIfOut, 100)
 	}
+
+	const enterDetails = () => {
+		inside.current.details = true;
+	}
+
 	const leftDetails = () => {
 		inside.current.details = false;
 		timer.current = setTimeout(closeIfOut, 100)
 	}
 
 	const checkToCloseOnClick = (evt: globalThis.MouseEvent) => {
-		evt.stopPropagation();
-		if (evt.target !== details.current){
-			checkUp(evt.target);
-		}
+		setTimeout(() => {
+			evt.stopPropagation()
+			if (!noClose.current){
+				setOpen(false)
+			}
+			noClose.current = false;
+		}, 5)
 	}
 
 	useEffect(() => {
 		if (open){
-			noCloseOnOutsideClick && document.addEventListener('click', checkToCloseOnClick)
-			if (closeOnMouseOut){
-				inside.current.activate && activate.current?.addEventListener('mouseleave', leftActivate)
-
+			if (!keepOpen || closeOnClick) {
+				document.body.addEventListener('click', checkToCloseOnClick)
 			}
 		}
+		else {
+			document.body.removeEventListener('click', checkToCloseOnClick)
+		}
 		return () => {
-			if (open){
-				noCloseOnOutsideClick && document.removeEventListener('click', checkToCloseOnClick)
-				if (closeOnMouseOut){
-					activate.current?.removeEventListener('mouseleave', leftActivate);
-					details.current?.removeEventListener('mouseleave', leftDetails);
-				}
+			document.body.removeEventListener('click', checkToCloseOnClick)
+		}
+	}, [open])
+
+	useEffect(() => {
+		if (open){
+			if (closeOnMouseOut){
+				details.current?.addEventListener('mouseenter', enterDetails)
+				inside.current.details && details.current?.addEventListener('mouseleave', leftDetails)
+				inside.current.activate && activate.current?.addEventListener('mouseleave', leftActivate)
 			}
+		}
+		else if (inside.current.details || inside.current.activate){
+			inside.current = {activate: false, details: false}
+		}
+		return () => {
+				activate.current?.removeEventListener('mouseleave', leftActivate);
+				details.current?.removeEventListener('mouseenter', enterDetails)
+				details.current?.removeEventListener('mouseleave', leftDetails);
 		}
 	})
 
 	useEffect(() => {
 		doDimensions()
+		return () => {
+			document.removeEventListener('click', checkToCloseOnClick)
+			activate.current?.removeEventListener('mouseleave', leftActivate);
+			details.current?.removeEventListener('mouseleave', leftDetails);
+		}
 	}, [])
 
 	const child: (t: JSX.Element) => JSX.Element = (t) => {
 		const props = {
 			className: `svz-pc-details-container${open ? " open" : ''}`,
+			onClick: () => {
+				console.log('clicked the details')
+				if (!closeOnClick){
+					noClose.current = true;
+				}
+			}
 		}
 		return typeof t === 'object' ? 
 			t?.type === 'tr'
@@ -198,7 +239,7 @@ const AccordionRow: FC<{
 	onClick?: (evt: MouseEvent<HTMLTableRowElement> | MouseEvent<HTMLDivElement>) => void,
 	onToggle?: (open: boolean) => void;
 	closeOnMouseOut?: boolean;
-	noCloseOnOutsideClick?: boolean;
+	keepOpen?: boolean;
 	/** AccordionRow.children can use two formats.
 	 * <tr>{activating row content}</tr>
 	 * <tr>{details row content}</tr>
