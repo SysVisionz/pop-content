@@ -74,15 +74,6 @@ const Accordion: FC<{
 		onClick?.(evt)
 	}
 
-	const checkUp = (elem: any) => {
-		console.log(elem)
-		if (!keepOpen){
-			elem === document.body
-			? setOpen(false)
-			: ![details.current, activate.current].includes(elem) && checkUp(elem)
-		}
-	}
-
 	const checkToCloseOnClick = (evt: globalThis.MouseEvent) => {
 		setTimeout(() => {
 			evt.stopPropagation()
@@ -105,7 +96,7 @@ const Accordion: FC<{
 		return () => {
 			document.body.removeEventListener('click', checkToCloseOnClick)
 		}
-	}, [open])
+}, [open])
 
 	useEffect(() => {
 		doDimensions()
@@ -204,12 +195,12 @@ const AccordionRow: FC<{
 	closeOnMouseOut?: boolean;
 	keepOpen?: boolean;
 	/** AccordionRow.children can use two formats.
-	 * <tr>{activating row content}</tr>
-	 * <tr>{details row content}</tr>
+	 * \<tr\>{activating row content}\</tr\>
+	 * \<tr\>{details row content}\</tr\>
 	 * 
 	 * or simply as the content of the activating row.
 	 * 
-	 * <td>{cell content}</td><td>{cell content}</td> ...
+	 * \<td\>{cell content}\</td\>\<td\>{cell content}\</td\> ...
 	 */
 	children: ReactElement | string | number | ReactElement[]
 	openDirection?: 'down' | 'up' ;
@@ -239,10 +230,13 @@ const AccordionRow: FC<{
 	return made
 }
 
-const useResize = (element: Element | null | undefined , onResize: (entries?: ResizeObserverEntry[], observer?: ResizeObserver) => void, options?: ResizeObserverOptions & {delay?: number | null}) => {
+export const useResize = (
+	element: Element | null | undefined, 
+	onResize: (entries?: ResizeObserverEntry[], observer?: ResizeObserver) => void, 
+	{delay: delayFor = 50, ...resizeOptions}: ResizeObserverOptions & {delay?: number} = {}
+) => {
 	const resizeChecker = useRef<ResizeObserver | null>(null)
-	const delay = useRef<NodeJS.Timeout | null>()
-	const {delay: delayFor, ...resizeOptions} = options || {};
+	const delay = useRef<NodeJS.Timeout | null>(null)
 	useEffect(() => {
 		let elem: unknown = element
 		if (elem){
@@ -252,7 +246,7 @@ const useResize = (element: Element | null | undefined , onResize: (entries?: Re
 						onResize(entries, observer)
 						delay.current = setTimeout(() => {
 							delay.current = null;
-						}, delayFor || 50)
+						}, delayFor)
 					}
 				})
 			}

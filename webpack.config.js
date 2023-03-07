@@ -10,7 +10,8 @@ module.exports = {
         filename: 'index.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: "umd",
-        library: "svz-accordion"
+        library: "svz-accordion",
+        globalObject: 'this'
     },
     devtool: "source-map",
     module: {
