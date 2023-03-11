@@ -1,2 +1,2 @@
 /// <reference types="react-scripts" />
-declare module "document"
+declare module '*.module.scss';

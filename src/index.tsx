@@ -104,7 +104,7 @@ const Accordion: FC<{
 
 	const child: (t: JSX.Element) => JSX.Element = (t) => {
 		const props = {
-			className: `svz-pc-details-container${open ? " open" : ''}`,
+			className: `svz-pc-details-container ${open ? " open" : ''}`,
 			onClick: () => {
 				if (!closeOnClick){
 					noClose.current = true;
@@ -137,8 +137,8 @@ const Accordion: FC<{
 				>
 					<div {...(t.type === 'div' ? {...t.props,
 						ref: details as LegacyRef<HTMLDivElement>, 
-						className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`
-					} : {className: `svz-pc-details${t.props.className ? ` ${t.props.className}` : ''}`})} >{t.type === 'div' ? t.props.children : t}</div>
+						className: `svz-pc-details ${t.props.className ? ` ${t.props.className}` : ''}`
+					} : {className: `svz-pc-details ${t.props.className ? ` ${t.props.className}` : ''}`})} >{t.type === 'div' ? t.props.children : t}</div>
 				</div>
 			: <div {...props} style={{height: dimensions.y, width: dimensions.x}}>
 				<div ref={details as LegacyRef<HTMLDivElement>} className="svz-pc-details">{t}</div>

@@ -1,4 +1,13 @@
 {
+  "env": {
+    "node": {
+      "plugins": [
+        [
+          "babel-plugin-transform-require-ignore", { "extensions": [".less", ".css"]}
+        ]
+      ]
+    }
+  },
     "presets": [
       "@babel/react",
       "@babel/typescript",

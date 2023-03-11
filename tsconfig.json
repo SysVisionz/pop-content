@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ESNext",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext",
     ],
     "module": "commonjs",
+    "allowJs": true,
+    "checkJs": true,
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,

@@ -1,6 +1,7 @@
 
 .svz-pc-summary{
 	cursor: pointer;
+	position: relative;
 	&div{
 		-webkit-user-select: none; /* Safari */
 		-ms-user-select: none; /* IE 10 and IE 11 */
@@ -11,16 +12,19 @@
 	position: relative;
 	overflow: hidden;
 	transition: height 400ms ease;
-}
-tr.svz-pc-details-container{
-	position: relative;
-	transition: line-height 400ms ease;
-	td{
-		overflow: hidden;
-	}
-	&:not(.open){
+	&.tr{
+		position: relative;
+		transition: line-height 400ms ease, height 400ms ease;
 		td{
-			padding: 0;
+			overflow: hidden;
+			padding: 5px;
+			white-space: nowrap;
+		}
+		&:not(.open){
+			height: 0;
+			td{
+				padding: 0 5px;
+			}
 		}
 	}
 }
