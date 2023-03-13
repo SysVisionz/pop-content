@@ -1,5 +1,5 @@
 
-.svz-pc-summary{
+.summary{
 	cursor: pointer;
 	position: relative;
 	&div{
@@ -8,26 +8,26 @@
 		user-select: none; /* Standard syntax */  
 	}
 }
-.svz-pc-details-container{
+.details-container{
 	position: relative;
 	overflow: hidden;
 	transition: height 400ms ease;
-	&.tr{
-		position: relative;
-		transition: line-height 400ms ease, height 400ms ease;
+}
+tr.details-container{
+	position: relative;
+	transition: line-height 400ms ease, height 400ms ease;
+	td{
+		overflow: hidden;
+		padding: 1px 5px;
+		white-space: nowrap;
+	}
+	&:not(.open){
+		height: 0;
 		td{
-			overflow: hidden;
-			padding: 5px;
-			white-space: nowrap;
-		}
-		&:not(.open){
-			height: 0;
-			td{
-				padding: 0 5px;
-			}
+			padding: 0 5px;
 		}
 	}
 }
-.svz-pc-details{
+.details{
 	position: absolute;
 }

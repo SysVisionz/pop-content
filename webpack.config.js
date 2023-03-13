@@ -1,5 +1,6 @@
 const path=require('path');
-const constants=require('constants')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
 module.exports = {
     entry: "./src/index.tsx",
     resolve: {
@@ -18,10 +19,17 @@ module.exports = {
       rules: [
         { test: /\.(s*)css$/, 
           use: [
-            "style-loader", 
-            'css-loader',
-            'sass-loader'
-          ] 
+            MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader',
+              options: {
+                sourceMap: true
+              }
+            },
+            'sass-loader',
+            'postcss-loader',
+          ],
+          sideEffects: true
         },
         { test: /\.tsx?$/, loader: "babel-loader" },
         { test: /\.tsx?$/, loader: "ts-loader" },
@@ -41,5 +49,8 @@ module.exports = {
           "amd": "react-dom",
           "root": "ReactDOM"
       }
-    }
+    },
+    plugins: [
+      new MiniCssExtractPlugin({filename: 'styles.css'})
+    ]
   };
